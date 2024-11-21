@@ -19,5 +19,5 @@ dependencyResolutionManagement {
    }
 }
 
-rootProject.name = "A7_01_RoomPeopleRelations"
+rootProject.name = "A7_02_RoomPeopleRelations"
 include(":app")
