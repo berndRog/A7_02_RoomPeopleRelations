@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.local.dtos
+package de.rogallab.mobile.data.dtos
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -23,7 +23,7 @@ import androidx.room.Index
    ],
    indices = [Index("personId"), Index("movieId")]
 )
-data class PersonDtoMovieDtoCrossRef(
+data class PersonMovieCrossRefDto(
    val personId: String,
    val movieId: String
 )

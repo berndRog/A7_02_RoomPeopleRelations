@@ -15,6 +15,8 @@ data class Person (
    val address: Address? = null,
    // Person ->  [0..*] Car
    val cars: MutableList<Car> = mutableListOf(),
+   // Person ->  [0..*] Movie
+   val movies: MutableList<Movie> = mutableListOf(),
    // Person: -> [0..*] Ticket
    val tickets: MutableList<Ticket> = mutableListOf()
 )

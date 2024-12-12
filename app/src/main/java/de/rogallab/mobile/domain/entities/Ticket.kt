@@ -6,7 +6,6 @@ import kotlinx.datetime.LocalDateTime
 data class Ticket(
    val dateTime: LocalDateTime,
    val seat: String,
-   val price: Double,
    val id: String = newUuid(),
    val personId: String, // Foreign key for Person
    val movieId: String   // Foreign key for Movie

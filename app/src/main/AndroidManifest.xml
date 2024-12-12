@@ -25,6 +25,15 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+
+<!--    Disable Koin's automatic initialization -->
+<!--    <meta-data-->
+<!--      android:name="io.insert-koin.androidx.startup"-->
+<!--      android:value="disable" />-->
+<!--    Disable Koin's automatic initialization -->
+<!--    <meta-data-->
+<!--      android:name="io.insert-koin.androidx.startup"-->
+<!--      android:value="disable" />-->
   </application>
 
 </manifest>

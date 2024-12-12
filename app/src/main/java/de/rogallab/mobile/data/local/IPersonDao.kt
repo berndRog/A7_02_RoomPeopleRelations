@@ -2,14 +2,16 @@ package de.rogallab.mobile.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
+import de.rogallab.mobile.data.dtos.AddressDto
+import de.rogallab.mobile.data.dtos.CarDto
+import de.rogallab.mobile.data.dtos.MovieDto
+import de.rogallab.mobile.data.dtos.PersonDto
+import de.rogallab.mobile.data.dtos.TicketDto
 import de.rogallab.mobile.data.local.database.intermediate.PersonWithAddress
 import de.rogallab.mobile.data.local.database.intermediate.PersonWithCars
-//import de.rogallab.mobile.data.local.database.intermediate.PersonWithMoviesByCrossRef
-import de.rogallab.mobile.data.local.dtos.AddressDto
-import de.rogallab.mobile.data.local.dtos.CarDto
-
-import de.rogallab.mobile.data.local.dtos.PersonDto
+import de.rogallab.mobile.data.local.database.intermediate.PersonWithMoviesByCrossRef
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -51,11 +53,9 @@ interface IPersonDao: IBaseDao<PersonDto> {
    suspend fun getPersonWithCars(personId: String): PersonWithCars
 
 
-
-
-//   @Transaction
-//   @Query("SELECT * FROM Person WHERE id = :personId")
-//   suspend fun getPersonWithMovies(personId: String): PersonWithMoviesByCrossRef
+   @Transaction
+   @Query("SELECT * FROM Person WHERE id = :personId")
+   suspend fun getPersonWithMovies(personId: String): PersonWithMoviesByCrossRef
 
 //   @Transaction
 //   @Query("SELECT * FROM Movie WHERE id = :movieId")
@@ -76,7 +76,7 @@ interface IPersonDao: IBaseDao<PersonDto> {
          "LEFT JOIN Address ON Person.id = Address.personId " +
          "WHERE Person.id = :personId"
    )
-   suspend fun loadPersonWithAddress(personId: String): Map<PersonDto, AddressDto>
+   suspend fun loadPersonWithAddress(personId: String): Map<PersonDto, AddressDto?>
 
    @Transaction
    @Query(
@@ -92,6 +92,64 @@ interface IPersonDao: IBaseDao<PersonDto> {
          "WHERE Person.id = :personId"
    )
    suspend fun loadPersonWithCars(personId: String): Map<PersonDto, List<CarDto>>
+
+
+   @Transaction
+   @Query(
+      "SELECT Person.*, Movie.* FROM Person " +
+         "INNER JOIN PersonMovieCrossRef ON Person.id = PersonMovieCrossRef.personId " +
+         "INNER JOIN Movie ON PersonMovieCrossRef.movieId = Movie.id"
+   )
+   suspend fun loadPeopleWithMovies(): Map<PersonDto, List<MovieDto>>
+
+   @Transaction
+   @Query(
+      "SELECT Person.*, Movie.* " +
+         "FROM Person " +
+         "INNER JOIN PersonMovieCrossRef ON Person.id = PersonMovieCrossRef.personId " +
+         "INNER JOIN Movie ON PersonMovieCrossRef.movieId = Movie.id " +
+         "WHERE Person.id = :personId"
+   )
+   suspend fun loadPersonWithMovies(personId: String): Map<PersonDto, List<MovieDto>>
+
+   @Transaction
+   @Query(
+      "SELECT Movie.*, Person.* " +
+         "FROM Movie " +
+         "INNER JOIN PersonMovieCrossRef ON Movie.id = PersonMovieCrossRef.movieId " +
+         "INNER JOIN Person ON PersonMovieCrossRef.personId = Person.id"
+   )
+   suspend fun loadMoviesWithPeople(): Map<MovieDto, List<PersonDto>>
+
+   @Transaction
+   @Query(
+      "SELECT Movie.*, Person.* FROM Movie " +
+         "INNER JOIN PersonMovieCrossRef ON Movie.id = PersonMovieCrossRef.movieId " +
+         "INNER JOIN Person ON PersonMovieCrossRef.personId = Person.id " +
+         "WHERE Movie.id = :movieId"
+   )
+   suspend fun loadMovieWithPeople(movieId: String): Map<MovieDto, List<PersonDto>>
+
+
+   @Transaction
+   @Query(
+      "SELECT Person.*, Ticket.*" +
+         "FROM Person " +
+         "INNER JOIN Ticket ON Person.id = Ticket.personId " +
+         "WHERE Person.id = :personId;"
+   )
+   suspend fun loadPersonWithTickets(personId: String): Map<PersonDto, List<TicketDto>>
+
+   @Transaction
+   @RewriteQueriesToDropUnusedColumns
+   @Query(
+      "SELECT Person.*, Movie.* " +
+         "FROM Person " +
+         "INNER JOIN Ticket ON Person.id = Ticket.personId " +
+         "INNER JOIN Movie ON Ticket.movieId = Movie.id " +
+         "WHERE Person.id = :personId;"
+   )
+   suspend fun loadPersonWithMoviesViaTickets(personId: String): Map<PersonDto, List<MovieDto>>
 
 
 }

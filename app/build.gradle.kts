@@ -39,8 +39,9 @@ android {
       targetSdk = 34
       versionCode = 1
       versionName = "1.0"
+//    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+      testInstrumentationRunner = "de.rogallab.mobile.CustomTestRunner"
 
-      testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
       vectorDrawables {
          useSupportLibrary = true
       }
@@ -136,9 +137,12 @@ dependencies {
    ksp(libs.androidx.room.compiler)
 
    // Koin
+   implementation(project.dependencies.platform(libs.koin.bom))
+   implementation(libs.koin.core)
    implementation(libs.koin.android)
    implementation(libs.koin.androidx.compose)
-   implementation(libs.koin.androidx.startup)
+   implementation(libs.koin.androidx.compose.navigation)
+   //implementation(libs.koin.androidx.startup)
 
    // Ktor/Kotlin JSON Serializer
    implementation(libs.kotlinx.serialization.json)
@@ -149,21 +153,20 @@ dependencies {
    // ANDROID TESTS ---------------
    // https://developer.android.com/jetpack/androidx/releases/test
    // To use the androidx.test.core APIs
-   androidTestImplementation(libs.androidx.core)
-   androidTestImplementation(libs.androidx.core.ktx)
+   androidTestImplementation(libs.androidx.test.core)
+   androidTestImplementation(libs.androidx.test.core.ktx)
 
    // To use the androidx.test.espresso
-   androidTestImplementation(libs.androidx.espresso.core)
+   androidTestImplementation(libs.androidx.test.espresso.core)
 
    // To use the JUnit Extension APIs
-   androidTestImplementation(libs.androidx.junit)
-   androidTestImplementation(libs.androidx.junit.ktx)
-
+   androidTestImplementation(libs.androidx.test.ext.junit)
+   androidTestImplementation(libs.androidx.test.ext.junit.ktx)
    // To use the Truth Extension APIs
-   androidTestImplementation(libs.androidx.truth)
+   androidTestImplementation(libs.androidx.test.ext.truth)
 
    // To use the androidx.test.runner APIs
-   androidTestImplementation(libs.androidx.runner)
+   androidTestImplementation(libs.androidx.test.runner)
 
    // To use Compose Testing
    androidTestImplementation(libs.androidx.ui.test.junit4)
@@ -172,18 +175,21 @@ dependencies {
    // optional - Test helpers
    androidTestImplementation(libs.androidx.room.testing)
 
+   androidTestImplementation(libs.androidx.arch.core.testing)
+
    // testing coroutines
    androidTestImplementation(libs.kotlinx.coroutines.test)
 
-
    androidTestImplementation(libs.koin.test)
+   androidTestImplementation(libs.koin.test.junit4)
    androidTestImplementation(libs.koin.android.test)
+
+   androidTestImplementation(libs.mockito.core)
+   androidTestImplementation(libs.mockito.android)
+   androidTestImplementation(libs.mockito.kotlin)
 
 
    androidTestImplementation(libs.androidx.ui.test.manifest)
-
-
-
    debugImplementation(libs.androidx.ui.test.manifest)
 
 }

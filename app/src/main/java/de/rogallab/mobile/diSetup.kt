@@ -7,27 +7,30 @@ import de.rogallab.mobile.data.local.IMovieDao
 import de.rogallab.mobile.data.local.IPersonDao
 import de.rogallab.mobile.data.local.IPersonMovieDao
 import de.rogallab.mobile.data.local.ITicketDao
-import de.rogallab.mobile.data.Seed
 import de.rogallab.mobile.data.local.database.AppDatabase
 import de.rogallab.mobile.data.local.database.SeedDatabase
+import de.rogallab.mobile.data.local.seed.Seed
 import de.rogallab.mobile.data.repositories.AddressRepository
 import de.rogallab.mobile.data.repositories.CarRepository
-import de.rogallab.mobile.data.repositories.PeopleRepository
+import de.rogallab.mobile.data.repositories.MovieRepository
+import de.rogallab.mobile.data.repositories.PersonRepository
 import de.rogallab.mobile.domain.IAddressRepository
 import de.rogallab.mobile.domain.ICarRepository
-import de.rogallab.mobile.domain.IPeopleRepository
+import de.rogallab.mobile.domain.IMovieRepository
+import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.features.cars.CarsViewModel
 import de.rogallab.mobile.ui.features.people.PeopleViewModel
 import de.rogallab.mobile.ui.features.people.PersonValidator
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import kotlin.coroutines.CoroutineContext
 
 val uiModules: Module = module {
    val tag = "<-uiModules"
@@ -38,33 +41,41 @@ val uiModules: Module = module {
    logInfo(tag, "viewModel -> PeopleViewModel")
    viewModel<PeopleViewModel> {
       PeopleViewModel(
-         get<IPeopleRepository>(),
-         get<PersonValidator>()
+         _repository = get<IPersonRepository>(),
+         _validator = get<PersonValidator>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
+//   viewModel<PeopleViewModel> {
+//      PeopleViewModel(
+//         _repository = get { parametersOf(get<PeopleViewModel>().viewModelScope) },
+//         _validator = get<PersonValidator>()
+//      )
+//   }
 
    logInfo(tag, "viewModel -> CarsViewModel")
    viewModel<CarsViewModel> {
       CarsViewModel(
-         get<IPeopleRepository>(),
-         get<ICarRepository>()
+         _peopleRepository = get<IPersonRepository>(),
+         _carRepository = get<ICarRepository>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
 }
 
-private val tag = "<-domainModules"
-
-typealias CoroutineContextMain = CoroutineContext
-typealias CoroutineContextIO = CoroutineContext
-
-
-private val _coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
-   // Handle the exception here
-   logError(tag, "Coroutine exception: ${exception.localizedMessage}")
-}
-
 val domainModules: Module = module {
+   val tag = "<-domainModules"
 
+   logInfo(tag, "single    -> CoroutineExceptionHandler")
+   single<CoroutineExceptionHandler> {
+      CoroutineExceptionHandler { _, exception ->
+         logError(tag, "Coroutine exception: ${exception.localizedMessage}")
+      }
+   }
+   logInfo(tag, "single    -> named(DispatcherIO)")
+   single<CoroutineDispatcher>(named("DispatcherIO")) { Dispatchers.IO }
+   logInfo(tag, "single    -> named(DispatcherMain)")
+   single<CoroutineDispatcher>(named("DispatcherMain")) { Dispatchers.Main }
 }
 
 val dataModules = module {
@@ -73,31 +84,27 @@ val dataModules = module {
    logInfo(tag, "single    -> Seed")
    single<Seed> {
       Seed(
-         androidContext(),
-         androidContext().resources
-      )
+         context = androidContext(),
+         resources = androidContext().resources
+      ).createPerson(true)
    }
 
    logInfo(tag, "single    -> SeedDatabase")
    single<SeedDatabase> {
       SeedDatabase(
-         get<IPersonDao>(),
-         get<IAddressDao>(),
-         get<ICarDao>(),
-         get<IMovieDao>(),
-         get<IPersonMovieDao>(),
-         get<ITicketDao>(),
-         Dispatchers.IO,
-         get<Seed>()
+         _database = get<AppDatabase>(),
+         _personDao = get<IPersonDao>(),
+         _seed = get<Seed>(),
+         _coroutineDispatcher = get<CoroutineDispatcher>(named("DispatcherIO"))
       )
    }
 
    logInfo(tag, "single    -> AppDatabase")
    single {
       Room.databaseBuilder(
-         androidContext(),
-         AppDatabase::class.java,
-         AppStart.DATABASENAME
+         context = androidContext(),
+         klass = AppDatabase::class.java,
+         name = AppStart.DATABASE_NAME
       ).build()
    }
 
@@ -119,27 +126,44 @@ val dataModules = module {
    logInfo(tag, "single    -> ITicketDao")
    single<ITicketDao> { get<AppDatabase>().createTicketDao() }
 
-   // Provide IPeopleRepository
-   logInfo(tag, "single    -> PeopleRepository: IPeopleRepository")
-   single<IPeopleRepository> {
-      PeopleRepository(
-         get<IPersonDao>(),
-         Dispatchers.IO
+   // Provide IPersonRepository, injecting the `viewModelScope`
+   logInfo(tag, "single    -> PersonRepository: IPersonRepository")
+   single<IPersonRepository> {
+      PersonRepository(
+         _personDao = get<IPersonDao>(),
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
+//   factory<IPersonRepository> { (viewModelScope: CoroutineScope) ->
+//      PersonRepository(
+//         _viewModelScope = viewModelScope,
+//         _personDao = get<IPersonDao>(),
+//         _coroutineDispatcher = Dispatchers.IO
+//      )
+//   }
    logInfo(tag, "single    -> AddressRepository: IAddressRepository")
    single<IAddressRepository> {
       AddressRepository(
-         get<IAddressDao>(),
-         Dispatchers.IO
+         _addressDao = get<IAddressDao>(),
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
    logInfo(tag, "single    -> CarRepository: ICarRepository")
    single<ICarRepository> {
       CarRepository(
-         get<ICarDao>(),
-         Dispatchers.IO
+         _carDao = get<ICarDao>(),
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
-
+   logInfo(tag, "single    -> MovieRepository: IMovieRepository")
+   single<IMovieRepository> {
+      MovieRepository(
+         _movieDao = get<IMovieDao>(),
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
 }

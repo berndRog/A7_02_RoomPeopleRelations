@@ -61,11 +61,11 @@ fun PeopleListScreen(
    // Observe the peopleUiState of the viewmodel
    val peopleUiState by viewModel.peopleUiStateFlow.collectAsStateWithLifecycle()
 
-   // read all people from repository, when the screen is created
-   LaunchedEffect(Unit) {
-      logVerbose(tag, "fetchPeople()")
-      viewModel.onProcessPeopleIntent(PeopleIntent.Fetch)
-   }
+//   // read all people from repository, when the screen is created
+//   LaunchedEffect(Unit) {
+//      logVerbose(tag, "fetchPeople()")
+//      viewModel.onProcessPeopleIntent(PeopleIntent.Fetch)
+//   }
    
    // Back navigation
    val activity = LocalContext.current as Activity
@@ -137,7 +137,8 @@ fun PeopleListScreen(
                onProcessIntent = {                     // remove item
                   viewModel.onProcessPersonIntent(PersonIntent.Remove(person)) },
                onErrorEvent = viewModel::onErrorEvent, // undo -> show snackbar
-               onUndoAction = viewModel::undoRemove    // undo -> action
+               onUndoAction = {                        // undo -> action
+                  viewModel.onProcessPersonIntent(PersonIntent.UndoRemove) }
             ) {
                // content
                PersonCard(

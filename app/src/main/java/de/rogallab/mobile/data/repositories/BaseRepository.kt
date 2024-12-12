@@ -1,20 +1,21 @@
-package de.rogallab.mobile.data.local.repositories
+package de.rogallab.mobile.data.repositories
 
 import de.rogallab.mobile.data.local.IBaseDao
 import de.rogallab.mobile.domain.IBaseRepository
 import de.rogallab.mobile.domain.ResultData
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.withContext
 
 open class BaseRepository<T, Dto, DAO : IBaseDao<Dto>>(
    private val _dao: DAO,
-   private val _coroutineDispatcher: CoroutineDispatcher = Dispatchers.IO,
+   private val _dispatcher: CoroutineDispatcher,
+   private val _exceptionHandler: CoroutineExceptionHandler,
    private val transformToDto: (T) -> Dto,
 ): IBaseRepository<T> {
 
-   override suspend fun create(entity: T): ResultData<Unit> =
-      withContext(_coroutineDispatcher) {
+   override suspend fun insert(entity: T): ResultData<Unit> =
+      withContext(_dispatcher+_exceptionHandler) {
          return@withContext try {
             val dto: Dto = transformToDto(entity)
             _dao.insert( dto )
@@ -24,8 +25,8 @@ open class BaseRepository<T, Dto, DAO : IBaseDao<Dto>>(
          }
       }
 
-   override suspend fun create(entities: List<T>): ResultData<Unit> =
-      withContext(_coroutineDispatcher) {
+   override suspend fun insert(entities: List<T>): ResultData<Unit> =
+      withContext(_dispatcher+_exceptionHandler) {
          return@withContext try {
             val dtos: List<Dto> = entities.map { it: T -> transformToDto(it) }
             _dao.insert( dtos )
@@ -36,7 +37,7 @@ open class BaseRepository<T, Dto, DAO : IBaseDao<Dto>>(
       }
 
    override suspend fun update(entity: T): ResultData<Unit> =
-      withContext(_coroutineDispatcher) {
+      withContext(_dispatcher+_exceptionHandler) {
          return@withContext try {
             val dto: Dto = transformToDto(entity)
             _dao.update( dto )
@@ -47,7 +48,7 @@ open class BaseRepository<T, Dto, DAO : IBaseDao<Dto>>(
       }
 
    override suspend fun remove(entity: T): ResultData<Unit> =
-      withContext(_coroutineDispatcher) {
+      withContext(_dispatcher+_exceptionHandler) {
          return@withContext try {
             val dto: Dto = transformToDto(entity)
             _dao.delete( dto )

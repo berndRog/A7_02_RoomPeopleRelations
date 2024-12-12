@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.local.dtos
+package de.rogallab.mobile.data.dtos
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -28,7 +28,6 @@ import kotlinx.datetime.LocalDateTime
 data class TicketDto(
    val dateTime: LocalDateTime,
    val seat: String,
-   val price: Double,
    val id: String = newUuid(),
    val personId: String, // Foreign key for Person
    val movieId: String   // Foreign key for Movie

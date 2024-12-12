@@ -30,21 +30,22 @@ import de.rogallab.mobile.ui.features.people.composables.PeopleListScreen
 import de.rogallab.mobile.ui.features.people.composables.PersonScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AppNavHost(
    // create a NavHostController with a factory function
    navController: NavHostController = rememberNavController(),
-   peopleViewModel: PeopleViewModel = koinViewModel(),
-   carsViewModel: CarsViewModel = koinViewModel()
+   peopleViewModel: PeopleViewModel = koinViewModel<PeopleViewModel>(), //koinViewModel(),
+   carsViewModel: CarsViewModel = koinViewModel<CarsViewModel>()
 ) {
    val tag = "<-AppNavHost"
-   val duration = 5000  // in milliseconds
+   val duration = 1500  // in milliseconds
 
    // N A V I G A T I O N    H O S T -------------------------------------------
    NavHost(
       navController = navController,
-      startDestination = NavScreen.CarsList.route,
+      startDestination = NavScreen.PeopleList.route,
       enterTransition = { enterTransition(duration) },
       exitTransition = { exitTransition(duration) },
       popEnterTransition = { popEnterTransition(duration) },

@@ -75,7 +75,7 @@ fun SwipePersonListItem(
          positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold,
       )
 
-   val undoDeletePerson = stringResource(R.string.undoDeletePerson)
+   val undoDeletePerson = stringResource(R.string.undoDeletePerson)+"\n${person.firstName} ${person.lastName}"
    val undoAnswer = stringResource(R.string.undoAnswer)
 
    LaunchedEffect(key1 = isRemoved) {

@@ -2,8 +2,8 @@ package de.rogallab.mobile.data.local.database.intermediate
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import de.rogallab.mobile.data.local.dtos.AddressDto
-import de.rogallab.mobile.data.local.dtos.PersonDto
+import de.rogallab.mobile.data.dtos.AddressDto
+import de.rogallab.mobile.data.dtos.PersonDto
 
 // One-to-One
 data class PersonWithAddress(

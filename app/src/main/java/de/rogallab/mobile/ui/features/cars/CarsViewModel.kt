@@ -2,22 +2,29 @@ package de.rogallab.mobile.ui.features.cars
 
 import androidx.lifecycle.viewModelScope
 import de.rogallab.mobile.domain.ICarRepository
-import de.rogallab.mobile.domain.IPeopleRepository
+import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.entities.Car
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.base.BaseViewModel
 import de.rogallab.mobile.ui.errors.ErrorParams
+import de.rogallab.mobile.ui.features.people.PeopleUiState
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CarsViewModel(
-   private val _peopleRepository: IPeopleRepository,
+   private val _peopleRepository: IPersonRepository,
    private val _carRepository: ICarRepository,
-) : BaseViewModel(TAG) {
+   private val _exceptionHandler: CoroutineExceptionHandler
+) : BaseViewModel(_exceptionHandler, TAG) {
 
    private var removedCar: Car? = null
 
@@ -26,34 +33,30 @@ class CarsViewModel(
    // ===============================
    // Data Binding PeopleListScreen <=> PersonViewModel
    private val _carsUiStateFlow = MutableStateFlow(CarsUiState())
-   val carsUiStateFlow = _carsUiStateFlow.asStateFlow()
 
    // transform intent into an action
    fun onProcessCarsIntent(intent: CarsIntent) {
       logInfo(TAG, "onProcessIntent: $intent")
       when (intent) {
-         is CarsIntent.Fetch -> fetch()
+         is CarsIntent.Fetch -> {} //fetch()
       }
    }
 
-   // read all people from repository
-   fun fetch() {
-      viewModelScope.launch(exceptionHandler) {
-         _carRepository.getAll().collect { resultData: ResultData<List<Car>> ->
-            when (resultData) {
-               is ResultData.Success -> {
-                  _carsUiStateFlow.update { it: CarsUiState ->
-                     it.copy(cars = resultData.data.toList())
-                  }
-                  logDebug(TAG, "fetchAll() people: ${carsUiStateFlow.value.cars.size}")
-               }
-               is ResultData.Error -> {
-                  onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
-               }
+   // Basic Scenario: Use the stateIn() operator to convert a Flow from the data source into a State
+   val carsUiStateFlow: StateFlow<CarsUiState> = _carRepository.selectAll()
+      .map { resultData ->
+         when (resultData) {
+            is ResultData.Success -> _carsUiStateFlow.update {
+               it.copy(cars = resultData.data.toList())
             }
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
-      }
-   }
+         return@map _carsUiStateFlow.value
+      }.stateIn(
+         scope = viewModelScope,
+         started = SharingStarted.WhileSubscribed(5000),
+         initialValue = CarsUiState()
+      )
 
    // Data Binding PersonScreen <=> PersonViewModel
    private val _carUiStateFlow = MutableStateFlow(CarUiState())
@@ -90,14 +93,12 @@ class CarsViewModel(
 
    private fun fetchById(personId: String) {
       logDebug(TAG, "fetchPersonById: $personId")
-
-      viewModelScope.launch(exceptionHandler) {
-         when (val resultData = _carRepository.getById(personId)) {
+      viewModelScope.launch(_exceptionHandler) {
+         when (val resultData = _carRepository.findById(personId)) {
             is ResultData.Success -> _carUiStateFlow.update { it: CarUiState ->
                it.copy(car = resultData.data ?: Car())  // new UiState
             }
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
       }
    }
@@ -108,34 +109,28 @@ class CarsViewModel(
 
    private fun create() {
       logDebug(TAG, "createCar()")
-      viewModelScope.launch(exceptionHandler) {
-         when (val resultData = _carRepository.create(_carUiStateFlow.value.car)) {
-            is ResultData.Success -> fetch()
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+      viewModelScope.launch(_exceptionHandler) {
+         when (val resultData = _carRepository.insert(_carUiStateFlow.value.car)) {
+            is ResultData.Success -> {}
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
       }
    }
    private fun update() {
       logDebug(TAG, "updatePerson()")
-      viewModelScope.launch(exceptionHandler) {
+      viewModelScope.launch(_exceptionHandler) {
          when (val resultData = _carRepository.update(_carUiStateFlow.value.car)) {
-            is ResultData.Success -> fetch()
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            is ResultData.Success -> {}
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
       }
    }
    private fun remove(car: Car) {
       logDebug(TAG, "removePerson()")
-      viewModelScope.launch(exceptionHandler) {
+      viewModelScope.launch(_exceptionHandler) {
          when (val resultData = _carRepository.remove(car)) {
-            is ResultData.Success -> {
-               removedCar = car
-               fetch()
-            }
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            is ResultData.Success -> removedCar = car
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
       }
    }
@@ -143,19 +138,14 @@ class CarsViewModel(
    fun undoRemove() {
       removedCar?.let { person ->
          logDebug(TAG, "undoRemovePerson()")
-         viewModelScope.launch(exceptionHandler) {
-            when (val resultData = _carRepository.create(person)) {
-               is ResultData.Success -> {
-                  removedCar = null
-                  fetch()
-               }
-               is ResultData.Error ->
-                  onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+         viewModelScope.launch(_exceptionHandler) {
+            when (val resultData = _carRepository.insert(person)) {
+               is ResultData.Success -> removedCar = null
+               is ResultData.Error -> handleErrorEvent(resultData.throwable)
             }
          }
       }
    }
-
 
    // =========================================
    // V A L I D A T E   I N P U T   F I E L D S

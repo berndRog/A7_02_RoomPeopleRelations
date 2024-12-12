@@ -4,18 +4,18 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import de.rogallab.mobile.AppStart
+import de.rogallab.mobile.data.dtos.AddressDto
+import de.rogallab.mobile.data.dtos.CarDto
+import de.rogallab.mobile.data.dtos.MovieDto
+import de.rogallab.mobile.data.dtos.PersonDto
+import de.rogallab.mobile.data.dtos.PersonMovieCrossRefDto
+import de.rogallab.mobile.data.dtos.TicketDto
 import de.rogallab.mobile.data.local.IAddressDao
 import de.rogallab.mobile.data.local.ICarDao
 import de.rogallab.mobile.data.local.IMovieDao
 import de.rogallab.mobile.data.local.IPersonDao
 import de.rogallab.mobile.data.local.IPersonMovieDao
 import de.rogallab.mobile.data.local.ITicketDao
-import de.rogallab.mobile.data.local.dtos.AddressDto
-import de.rogallab.mobile.data.local.dtos.CarDto
-import de.rogallab.mobile.data.local.dtos.MovieDto
-import de.rogallab.mobile.data.local.dtos.PersonDto
-import de.rogallab.mobile.data.local.dtos.PersonDtoMovieDtoCrossRef
-import de.rogallab.mobile.data.local.dtos.TicketDto
 
 @Database(
    entities = [
@@ -24,9 +24,9 @@ import de.rogallab.mobile.data.local.dtos.TicketDto
       CarDto::class,
       TicketDto::class,
       MovieDto::class,
-      PersonDtoMovieDtoCrossRef::class
+      PersonMovieCrossRefDto::class
    ],
-   version = AppStart.DATABASEVERSION,
+   version = AppStart.DATABASE_VERSION,
    exportSchema = false
 )
 @TypeConverters(Converters.UuidConverter::class, Converters.LocalDateTimeUTCConverter::class)
