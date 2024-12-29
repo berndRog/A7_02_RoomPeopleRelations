@@ -41,20 +41,18 @@ import de.rogallab.mobile.R
 import de.rogallab.mobile.domain.entities.Person
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.domain.utilities.logVerbose
 import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.errors.showError
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.features.people.PeopleIntent
-import de.rogallab.mobile.ui.features.people.PeopleViewModel
+import de.rogallab.mobile.ui.features.people.PersonViewModel
 import de.rogallab.mobile.ui.features.people.PersonIntent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeopleListScreen(
-   viewModel: PeopleViewModel = viewModel(),
+   viewModel: PersonViewModel = viewModel(),
 ) {
    val tag = "<-PeopleListScreen"
 
@@ -158,11 +156,9 @@ fun PeopleListScreen(
 
    LaunchedEffect(errorState.params) {
       errorState.params?.let { params: ErrorParams ->
-         logDebug(tag, "ErrorUiState: ${errorState.params}")
          // show the error with a snackbar
-         showError(snackbarHostState, params, viewModel::onNavigate )
-         // reset the errorState, params are copied to showError
-         viewModel.onErrorEventHandled()
+         showError(snackbarHostState, params,
+            viewModel::onNavigate, viewModel::onErrorEventHandled)
       }
    }
 }

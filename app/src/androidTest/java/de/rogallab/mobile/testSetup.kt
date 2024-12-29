@@ -20,6 +20,10 @@ import de.rogallab.mobile.domain.IMovieRepository
 import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
+import de.rogallab.mobile.ui.IErrorHandler
+import de.rogallab.mobile.ui.INavigationHandler
+import de.rogallab.mobile.ui.errors.ErrorHandler
+import de.rogallab.mobile.ui.navigation.NavigationHandler
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -131,6 +135,22 @@ val dataTestModules = module {
       MovieRepository(
          _movieDao = get<IMovieDao>(),
          _dispatcher = get<TestDispatcher>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+
+   logInfo(tag, "factory   -> NavigationHandler: INavigationHandler")
+   factory<INavigationHandler> {
+      NavigationHandler(
+         _coroutineScopeMain = get<CoroutineScope>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+
+   logInfo(tag, "factory   -> ErrorHandler: IErrorHandler")
+   factory<IErrorHandler> {
+      ErrorHandler(
+         _coroutineScopeMain = get<CoroutineScope>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }

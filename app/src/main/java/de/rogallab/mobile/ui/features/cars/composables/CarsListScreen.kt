@@ -46,14 +46,14 @@ import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.errors.showError
 import de.rogallab.mobile.ui.features.cars.CarIntent
 import de.rogallab.mobile.ui.features.cars.CarsIntent
-import de.rogallab.mobile.ui.features.cars.CarsViewModel
+import de.rogallab.mobile.ui.features.cars.CarViewModel
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarsListScreen(
-   viewModel: CarsViewModel = viewModel(),
+   viewModel: CarViewModel = viewModel(),
 ) {
    val tag = "<-CarsListScreen"
 

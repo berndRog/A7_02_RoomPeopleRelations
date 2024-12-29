@@ -5,7 +5,7 @@ import de.rogallab.mobile.domain.utilities.newUuid
 data class Car(
    val maker: String = "",
    val model: String = "",
-   val id: String = newUuid(),
+   val id: String,
    // Car -> [0..1] Person  (is it really need?)
    // leads to a circular dependency which is not recommended
    // val person: Person? = null,

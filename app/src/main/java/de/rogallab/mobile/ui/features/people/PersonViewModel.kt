@@ -1,5 +1,6 @@
 package de.rogallab.mobile.ui.features.people
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.ResultData
@@ -7,7 +8,9 @@ import de.rogallab.mobile.domain.entities.Person
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.ui.base.BaseViewModel
+import de.rogallab.mobile.domain.utilities.newUuid
+import de.rogallab.mobile.ui.IErrorHandler
+import de.rogallab.mobile.ui.INavigationHandler
 import de.rogallab.mobile.ui.errors.ErrorParams
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,16 +25,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class PeopleViewModel(
+class PersonViewModel(
    private val _repository: IPersonRepository,
    private val _validator: PersonValidator,
+   private val _navigationHandler: INavigationHandler,
+   private val _errorHandler: IErrorHandler,
    private val _exceptionHandler: CoroutineExceptionHandler
-) : BaseViewModel(_exceptionHandler ,TAG) {
+) : ViewModel(),
+   INavigationHandler by _navigationHandler,
+   IErrorHandler by _errorHandler{
 
-   // ===============================
-   // S T A T E   C H A N G E S
-   // ===============================
-   // Data Binding PeopleListScreen <=> PersonViewModel
+   //region PeopleListScreen -------------------------------------------------------------------------------
    private val _peopleUiStateFlow = MutableStateFlow(PeopleUiState())
    //val peopleUiStateFlow = _peopleUiStateFlow.asStateFlow()
 
@@ -89,24 +93,9 @@ class PeopleViewModel(
          reloadTrigger.emit(Unit)
       }
    }
+   //endregion
 
-// read all people from repository
-// Every time fetch is called, we add another collector. Over time, you end up with a lot
-// of collectors all collecting the same data, leading to memory leaks and performance issues.
-//   fun fetch() {
-//      viewModelScope.launch(exceptionHandler) {
-//         _repository.getAll().collect { resultData ->
-//            when (resultData) {
-//               is ResultData.Success ->  _peopleUiStateFlow.update { it: PeopleUiState ->
-//                     it.copy(people = resultData.data.toList())
-//               }
-//               is ResultData.Error -> handleErrorEvent(resultData.throwable)
-//            }
-//         }
-//      }
-//   }
-
-   // Data Binding PersonScreen <=> PersonViewModel
+   //region PersonScreen --------------------------------------------------------------------------------
    private val _personUiStateFlow = MutableStateFlow(PersonUiState())
    val personUiStateFlow = _personUiStateFlow.asStateFlow()
 
@@ -160,7 +149,7 @@ class PeopleViewModel(
       viewModelScope.launch(_exceptionHandler) {
          when (val resultData = _repository.findById(personId)) {
             is ResultData.Success -> _personUiStateFlow.update { it: PersonUiState ->
-               it.copy(person = resultData.data ?: Person())  // new UiState
+               it.copy(person = resultData.data ?: Person(id = newUuid()))  // new UiState
             }
             is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
@@ -208,12 +197,11 @@ class PeopleViewModel(
    }
 
    private fun clearState() {
-      _personUiStateFlow.update { it.copy(person = Person()) }
+      _personUiStateFlow.update { it.copy(person = Person(id = newUuid())) }
    }
+   //endregion
 
-   // =========================================
-   // V A L I D A T E   I N P U T   F I E L D S
-   // =========================================
+   //region Validate input fields ------------------------------------------------------------------------
    // validate all input fields after user finished input into the form
    fun validate(isInput: Boolean): Boolean {
       val person = _personUiStateFlow.value.person
@@ -241,8 +229,9 @@ class PeopleViewModel(
       }
       return true
    }
+   //endregion
 
    companion object {
-      private const val TAG = "<-PeopleViewModel"
+      private const val TAG = "<-PersonViewModel"
    }
 }

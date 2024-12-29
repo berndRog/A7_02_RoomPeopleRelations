@@ -18,26 +18,25 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import de.rogallab.mobile.domain.utilities.logVerbose
 import de.rogallab.mobile.ui.features.cars.CarValidator
-import de.rogallab.mobile.ui.features.cars.CarsViewModel
+import de.rogallab.mobile.ui.features.cars.CarViewModel
 import de.rogallab.mobile.ui.features.cars.composables.CarScreen
 import de.rogallab.mobile.ui.features.cars.composables.CarsListScreen
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
 import de.rogallab.mobile.ui.navigation.NavState
-import de.rogallab.mobile.ui.features.people.PeopleViewModel
+import de.rogallab.mobile.ui.features.people.PersonViewModel
 import de.rogallab.mobile.ui.features.people.PersonValidator
 import de.rogallab.mobile.ui.features.people.composables.PeopleListScreen
 import de.rogallab.mobile.ui.features.people.composables.PersonScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AppNavHost(
    // create a NavHostController with a factory function
    navController: NavHostController = rememberNavController(),
-   peopleViewModel: PeopleViewModel = koinViewModel<PeopleViewModel>(), //koinViewModel(),
-   carsViewModel: CarsViewModel = koinViewModel<CarsViewModel>()
+   personViewModel: PersonViewModel = koinViewModel<PersonViewModel>(), //koinViewModel(),
+   carViewModel: CarViewModel = koinViewModel<CarViewModel>()
 ) {
    val tag = "<-AppNavHost"
    val duration = 1500  // in milliseconds
@@ -53,12 +52,12 @@ fun AppNavHost(
    ) {
       composable(route = NavScreen.PeopleList.route) {
          PeopleListScreen(
-            viewModel = peopleViewModel,
+            viewModel = personViewModel,
          )
       }
       composable(route = NavScreen.PersonInput.route) {
          PersonScreen(
-            viewModel = peopleViewModel,
+            viewModel = personViewModel,
             validator = koinInject<PersonValidator>(),
             isInputScreen = true,
             id = null
@@ -70,7 +69,7 @@ fun AppNavHost(
       ) { backStackEntry ->
          val id = backStackEntry.arguments?.getString("personId")
          PersonScreen(
-            viewModel = peopleViewModel,
+            viewModel = personViewModel,
             validator = koinInject<PersonValidator>(),
             isInputScreen = false,
             id = id
@@ -79,12 +78,12 @@ fun AppNavHost(
 
       composable(route = NavScreen.CarsList.route) {
          CarsListScreen(
-            viewModel = carsViewModel,
+            viewModel = carViewModel,
          )
       }
       composable(route = NavScreen.CarInput.route) {
          CarScreen(
-            viewModel = carsViewModel,
+            viewModel = carViewModel,
             validator = koinInject<CarValidator>(),
             isInputScreen = true,
             id = null
@@ -96,7 +95,7 @@ fun AppNavHost(
       ) { backStackEntry ->
          val id = backStackEntry.arguments?.getString("carId")
          CarScreen(
-            viewModel = carsViewModel,
+            viewModel = carViewModel,
             validator = koinInject<CarValidator>(),
             isInputScreen = false,
             id = id
@@ -108,7 +107,7 @@ fun AppNavHost(
    // O N E   T I M E   E V E N T S   N A V I G A T I O N ---------------------
    // Observing the navigation state and handle navigation
    val navState: NavState
-      by peopleViewModel.navStateFlow.collectAsStateWithLifecycle()
+      by personViewModel.navStateFlow.collectAsStateWithLifecycle()
 
    navState.navEvent?.let { navEvent ->
       logVerbose(tag, "navEvent: $navEvent")
@@ -118,7 +117,7 @@ fun AppNavHost(
             // to the top of the stack.
             navController.navigate(navEvent.route)
             // onNavEventHandled() resets the navEvent to null
-            peopleViewModel.onNavEventHandled()
+            personViewModel.onNavEventHandled()
          }
          is NavEvent.NavigateReverse -> {
             navController.navigate(navEvent.route) {
@@ -127,12 +126,12 @@ fun AppNavHost(
                }                          // that route are removed
             }
             // onNavEventHandled() resets the navEvent to null
-            peopleViewModel.onNavEventHandled()
+            personViewModel.onNavEventHandled()
          }
          is NavEvent.NavigateBack -> {
             navController.popBackStack()
             // onNavEventHandled() resets the navEvent to null
-            peopleViewModel.onNavEventHandled()
+            personViewModel.onNavEventHandled()
          }
       } // end of when (it) {
    } // end of navEvent?.let { it: NavEvent ->

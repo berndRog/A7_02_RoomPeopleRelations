@@ -6,7 +6,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.entities.Person
-import de.rogallab.mobile.ui.features.people.PeopleViewModel
+import de.rogallab.mobile.ui.IErrorHandler
+import de.rogallab.mobile.ui.INavigationHandler
+import de.rogallab.mobile.ui.features.people.PersonViewModel
 import de.rogallab.mobile.ui.features.people.PersonIntent
 import de.rogallab.mobile.ui.features.people.PersonValidator
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -28,7 +30,7 @@ import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-class PeopleViewModelTest : KoinTest {
+class PersonViewModelTest : KoinTest {
 
    @get:Rule
    val instantTaskExecutorRule = InstantTaskExecutorRule()
@@ -36,7 +38,7 @@ class PeopleViewModelTest : KoinTest {
 
    private val personRepository: IPersonRepository = mock(IPersonRepository::class.java)
    private val personValidator: PersonValidator by inject()
-   private val peopleViewModel: PeopleViewModel by inject()
+   private val mPersonViewModel: PersonViewModel by inject()
 
    @Before
    fun setUp() {
@@ -49,9 +51,11 @@ class PeopleViewModelTest : KoinTest {
             single<PersonValidator> { PersonValidator(androidContext()) }
             single<IPersonRepository> { personRepository }
             single {
-               PeopleViewModel(
+               PersonViewModel(
                   _repository = get<IPersonRepository>(),
                   _validator = get<PersonValidator>(),
+                  _navigationHandler = get<INavigationHandler>(),
+                  _errorHandler = get<IErrorHandler>(),
                   _exceptionHandler = get<CoroutineExceptionHandler>()
                )
             }
@@ -72,10 +76,10 @@ class PeopleViewModelTest : KoinTest {
 //      `when`(personRepository.getAll()).thenReturn(flowOf(ResultData.Success(personList)))
 //
 //      // Act
-//      peopleViewModel.getPeople()
+//      mPersonViewModel.getPeople()
 //
 //      // Assert
-//      assertEquals(personList, peopleViewModel.people.value)
+//      assertEquals(personList, mPersonViewModel.people.value)
 //   }
 
 
@@ -84,28 +88,28 @@ class PeopleViewModelTest : KoinTest {
       // Arrange
       val firstName = "Arne"
       // Act
-      peopleViewModel.onProcessPersonIntent(PersonIntent.Clear)
-      peopleViewModel.onProcessPersonIntent(PersonIntent.FirstNameChange(firstName))
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.Clear)
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.FirstNameChange(firstName))
       // Assert
-      val actual = peopleViewModel.personUiStateFlow.value.person.firstName
+      val actual = mPersonViewModel.personUiStateFlow.value.person.firstName
       assertEquals(firstName, actual)
 
    }
    @Test
    fun testCreatePerson() = runTest {
       // Arrange
-      val newPerson = Person("1", "John", "Doe")
+      val newPerson = Person( "John", "Doe", id = "1")
       `when`(personRepository.insert(newPerson)).thenReturn(ResultData.Success(Unit))
 
       // Act
-      peopleViewModel.onProcessPersonIntent(PersonIntent.Clear)
-      peopleViewModel.onProcessPersonIntent(PersonIntent.FirstNameChange(newPerson.firstName))
-      peopleViewModel.onProcessPersonIntent(PersonIntent.LastNameChange(newPerson.lastName))
-      peopleViewModel.onProcessPersonIntent(PersonIntent.Create)
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.Clear)
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.FirstNameChange(newPerson.firstName))
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.LastNameChange(newPerson.lastName))
+      mPersonViewModel.onProcessPersonIntent(PersonIntent.Create)
 
       // Assert
       verify(personRepository).insert(newPerson)
-      val actual = peopleViewModel.personUiStateFlow.value.person
+      val actual = mPersonViewModel.personUiStateFlow.value.person
       assertEquals(newPerson, actual)
    }
 }

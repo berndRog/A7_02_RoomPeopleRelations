@@ -47,7 +47,7 @@ import de.rogallab.mobile.ui.errors.showError
 import de.rogallab.mobile.ui.features.cars.CarIntent
 import de.rogallab.mobile.ui.features.cars.CarUiState
 import de.rogallab.mobile.ui.features.cars.CarValidator
-import de.rogallab.mobile.ui.features.cars.CarsViewModel
+import de.rogallab.mobile.ui.features.cars.CarViewModel
 import de.rogallab.mobile.ui.features.people.composables.InputName
 import de.rogallab.mobile.ui.features.people.composables.SelectAndShowImage
 import de.rogallab.mobile.ui.navigation.NavEvent
@@ -58,7 +58,7 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarScreen(
-   viewModel: CarsViewModel = koinViewModel(),
+   viewModel: CarViewModel = koinViewModel(),
    validator: CarValidator = koinInject(),
    isInputScreen: Boolean = true,
    id: String? = null

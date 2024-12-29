@@ -8,7 +8,7 @@ data class Person (
    val email: String? = null,
    val phone: String? = null,
    val imagePath: String? = null,
-   val id: String = newUuid(),  // Uuid as String
+   val id: String,  // Uuid as String
 
    // Relations to other domainModel classes
    // Person ->  [0..1] Address

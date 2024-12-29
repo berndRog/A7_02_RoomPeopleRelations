@@ -1,5 +1,6 @@
 package de.rogallab.mobile.ui.features.cars
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.rogallab.mobile.domain.ICarRepository
 import de.rogallab.mobile.domain.IPersonRepository
@@ -7,9 +8,9 @@ import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.entities.Car
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.ui.base.BaseViewModel
-import de.rogallab.mobile.ui.errors.ErrorParams
-import de.rogallab.mobile.ui.features.people.PeopleUiState
+import de.rogallab.mobile.domain.utilities.newUuid
+import de.rogallab.mobile.ui.IErrorHandler
+import de.rogallab.mobile.ui.INavigationHandler
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,18 +21,19 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class CarsViewModel(
+class CarViewModel(
    private val _peopleRepository: IPersonRepository,
    private val _carRepository: ICarRepository,
+   private val _navigationHandler: INavigationHandler,
+   private val _errorHandler: IErrorHandler,
    private val _exceptionHandler: CoroutineExceptionHandler
-) : BaseViewModel(_exceptionHandler, TAG) {
+) : ViewModel(),
+   INavigationHandler by _navigationHandler,
+   IErrorHandler by _errorHandler {
 
    private var removedCar: Car? = null
 
-   // ===============================
-   // S T A T E   C H A N G E S
-   // ===============================
-   // Data Binding PeopleListScreen <=> PersonViewModel
+   //region CarsListScreen -------------------------------------------------------------------------------
    private val _carsUiStateFlow = MutableStateFlow(CarsUiState())
 
    // transform intent into an action
@@ -58,7 +60,9 @@ class CarsViewModel(
          initialValue = CarsUiState()
       )
 
-   // Data Binding PersonScreen <=> PersonViewModel
+   //endregion
+
+   //region PersonScreen --------------------------------------------------------------------------------
    private val _carUiStateFlow = MutableStateFlow(CarUiState())
    val carUiStateFlow = _carUiStateFlow.asStateFlow()
 
@@ -96,7 +100,7 @@ class CarsViewModel(
       viewModelScope.launch(_exceptionHandler) {
          when (val resultData = _carRepository.findById(personId)) {
             is ResultData.Success -> _carUiStateFlow.update { it: CarUiState ->
-               it.copy(car = resultData.data ?: Car())  // new UiState
+               it.copy(car = resultData.data ?: Car(id = newUuid()))  // new UiState
             }
             is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
@@ -104,7 +108,7 @@ class CarsViewModel(
    }
 
    private fun clearState() {
-      _carUiStateFlow.update { it.copy(car = Car()) }
+      _carUiStateFlow.update { it.copy(car = Car(id = newUuid())) }
    }
 
    private fun create() {
@@ -146,10 +150,9 @@ class CarsViewModel(
          }
       }
    }
+   //endregion
 
-   // =========================================
-   // V A L I D A T E   I N P U T   F I E L D S
-   // =========================================
+   //region Validate input fields ------------------------------------------------------------------------
    // validate all input fields after user finished input into the form
    fun validate(isInput: Boolean): Boolean {
       // write data to repository
@@ -157,8 +160,9 @@ class CarsViewModel(
       else         this.update()
       return true
    }
+   //endregion
 
    companion object {
-      private const val TAG = "<-CarsViewModel"
+      private const val TAG = "<-CarViewModel"
    }
 }

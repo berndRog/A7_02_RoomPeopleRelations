@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -38,9 +37,9 @@ import androidx.compose.ui.unit.dp
 import de.rogallab.mobile.R
 import de.rogallab.mobile.domain.entities.Person
 import de.rogallab.mobile.ui.errors.ErrorParams
+import de.rogallab.mobile.ui.features.people.PersonIntent
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.features.people.PersonIntent
 import kotlinx.coroutines.delay
 
 @Composable
@@ -51,11 +50,10 @@ fun SwipePersonListItem(
    onErrorEvent: (ErrorParams) -> Unit,
    onUndoAction: () -> Unit,
    animationDuration: Int = 1000,
-   content: @androidx.compose.runtime.Composable () -> Unit
+   content: @Composable () -> Unit
 ) {
 
    var isRemoved by remember{ mutableStateOf(false) }
-   var isUndo by remember{ mutableStateOf(false) }
    var hasNavigated by remember { mutableStateOf(false) }
 
    val state: SwipeToDismissBoxState =
@@ -75,7 +73,7 @@ fun SwipePersonListItem(
          positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold,
       )
 
-   val undoDeletePerson = stringResource(R.string.undoDeletePerson)+"\n${person.firstName} ${person.lastName}"
+   val undoDeletePerson = stringResource(R.string.undoDeletePerson)
    val undoAnswer = stringResource(R.string.undoAnswer)
 
    LaunchedEffect(key1 = isRemoved) {
@@ -83,11 +81,11 @@ fun SwipePersonListItem(
          delay(animationDuration.toLong())
          onProcessIntent(PersonIntent.Remove(person))
          // undo remove?
-         var params = ErrorParams(
+         val params = ErrorParams(
             message = undoDeletePerson,
             actionLabel = undoAnswer,
             duration = SnackbarDuration.Short,
-            withUndoAction = true,
+            withUndoAction = false,
             onUndoAction = onUndoAction,
             navEvent = NavEvent.NavigateReverse(route = NavScreen.PeopleList.route)
          )
@@ -118,7 +116,6 @@ fun SwipePersonListItem(
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun SetSwipeBackground(state: SwipeToDismissBoxState) {
 
    // Determine the properties of the swipe
@@ -143,7 +140,6 @@ fun SetSwipeBackground(state: SwipeToDismissBoxState) {
    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun getSwipeProperties(
    state: SwipeToDismissBoxState
@@ -180,8 +176,8 @@ fun getSwipeProperties(
 
    // Set the description
    val description: String = when (state.dismissDirection) {
-      SwipeToDismissBoxValue.StartToEnd -> "Editieren"
-      SwipeToDismissBoxValue.EndToStart -> "Löschen"
+      SwipeToDismissBoxValue.StartToEnd -> stringResource(R.string.edit)
+      SwipeToDismissBoxValue.EndToStart -> stringResource(R.string.delete)
       else -> "Unknown Action"
    }
 

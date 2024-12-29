@@ -20,62 +20,62 @@ import de.rogallab.mobile.domain.IMovieRepository
 import de.rogallab.mobile.domain.IPersonRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.ui.features.cars.CarsViewModel
-import de.rogallab.mobile.ui.features.people.PeopleViewModel
+import de.rogallab.mobile.ui.IErrorHandler
+import de.rogallab.mobile.ui.INavigationHandler
+import de.rogallab.mobile.ui.errors.ErrorHandler
+import de.rogallab.mobile.ui.features.cars.CarViewModel
+import de.rogallab.mobile.ui.features.people.PersonViewModel
 import de.rogallab.mobile.ui.features.people.PersonValidator
+import de.rogallab.mobile.ui.navigation.NavigationHandler
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-val uiModules: Module = module {
-   val tag = "<-uiModules"
-
-   logInfo(tag, "single    -> PersonValidator")
-   single<PersonValidator> { PersonValidator(androidContext()) }
-
-   logInfo(tag, "viewModel -> PeopleViewModel")
-   viewModel<PeopleViewModel> {
-      PeopleViewModel(
-         _repository = get<IPersonRepository>(),
-         _validator = get<PersonValidator>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
-      )
-   }
-//   viewModel<PeopleViewModel> {
-//      PeopleViewModel(
-//         _repository = get { parametersOf(get<PeopleViewModel>().viewModelScope) },
-//         _validator = get<PersonValidator>()
-//      )
-//   }
-
-   logInfo(tag, "viewModel -> CarsViewModel")
-   viewModel<CarsViewModel> {
-      CarsViewModel(
-         _peopleRepository = get<IPersonRepository>(),
-         _carRepository = get<ICarRepository>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
-      )
-   }
-}
+typealias CoroutineDispatcherMain = CoroutineDispatcher
+typealias CoroutineDispatcherIo = CoroutineDispatcher
+typealias CoroutineScopeMain = CoroutineScope
+typealias CoroutineScopeIo = CoroutineScope
 
 val domainModules: Module = module {
    val tag = "<-domainModules"
 
-   logInfo(tag, "single    -> CoroutineExceptionHandler")
-   single<CoroutineExceptionHandler> {
+
+   logInfo(tag, "factory   -> CoroutineExceptionHandler")
+   factory<CoroutineExceptionHandler> {
       CoroutineExceptionHandler { _, exception ->
          logError(tag, "Coroutine exception: ${exception.localizedMessage}")
       }
    }
-   logInfo(tag, "single    -> named(DispatcherIO)")
-   single<CoroutineDispatcher>(named("DispatcherIO")) { Dispatchers.IO }
-   logInfo(tag, "single    -> named(DispatcherMain)")
-   single<CoroutineDispatcher>(named("DispatcherMain")) { Dispatchers.Main }
+
+   logInfo( tag, "factory  -> CoroutineDispatcherMain")
+   factory<CoroutineDispatcherMain> { Dispatchers.Main }
+
+   logInfo(tag, "factory   -> CoroutineDispatcherIo)")
+   factory<CoroutineDispatcherIo>{ Dispatchers.IO }
+
+
+   logInfo(tag, "factory   -> CoroutineScopeMain")
+   factory<CoroutineScopeMain> {
+      CoroutineScope(
+         SupervisorJob() +
+            get<CoroutineDispatcherIo>()
+      )
+   }
+
+   logInfo(tag, "factory   -> CoroutineScopeIo")
+   factory<CoroutineScopeIo> {
+      CoroutineScope(
+         SupervisorJob() +
+            get<CoroutineDispatcherIo>()
+      )
+   }
 }
 
 val dataModules = module {
@@ -95,7 +95,7 @@ val dataModules = module {
          _database = get<AppDatabase>(),
          _personDao = get<IPersonDao>(),
          _seed = get<Seed>(),
-         _coroutineDispatcher = get<CoroutineDispatcher>(named("DispatcherIO"))
+         _coroutineDispatcher = get<CoroutineDispatcherIo>()
       )
    }
 
@@ -131,22 +131,16 @@ val dataModules = module {
    single<IPersonRepository> {
       PersonRepository(
          _personDao = get<IPersonDao>(),
-         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _dispatcher = get<CoroutineDispatcherIo>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
-//   factory<IPersonRepository> { (viewModelScope: CoroutineScope) ->
-//      PersonRepository(
-//         _viewModelScope = viewModelScope,
-//         _personDao = get<IPersonDao>(),
-//         _coroutineDispatcher = Dispatchers.IO
-//      )
-//   }
+
    logInfo(tag, "single    -> AddressRepository: IAddressRepository")
    single<IAddressRepository> {
       AddressRepository(
          _addressDao = get<IAddressDao>(),
-         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _dispatcher = get<CoroutineDispatcherIo>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
@@ -154,7 +148,7 @@ val dataModules = module {
    single<ICarRepository> {
       CarRepository(
          _carDao = get<ICarDao>(),
-         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _dispatcher = get<CoroutineDispatcherIo>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
@@ -162,7 +156,52 @@ val dataModules = module {
    single<IMovieRepository> {
       MovieRepository(
          _movieDao = get<IMovieDao>(),
-         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _dispatcher = get<CoroutineDispatcherIo>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+}
+
+val uiModules: Module = module {
+   val tag = "<-uiModules"
+
+   logInfo(tag, "factory   -> NavigationHandler: INavigationHandler")
+   factory<INavigationHandler> {
+      NavigationHandler(
+         _coroutineScopeMain = get<CoroutineScopeMain>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+
+   logInfo(tag, "factory   -> ErrorHandler: IErrorHandler")
+   factory<IErrorHandler> {
+      ErrorHandler(
+         _coroutineScopeMain = get<CoroutineScopeMain>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+
+   logInfo(tag, "single    -> PersonValidator")
+   single<PersonValidator> { PersonValidator(androidContext()) }
+
+   logInfo(tag, "viewModel -> PersonViewModel")
+   viewModel<PersonViewModel> {
+      PersonViewModel(
+         _repository = get<IPersonRepository>(),
+         _validator = get<PersonValidator>(),
+         _navigationHandler = get<INavigationHandler>(),
+         _errorHandler = get<IErrorHandler>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+
+   logInfo(tag, "viewModel -> CarViewModel")
+   viewModel<CarViewModel> {
+      CarViewModel(
+         _peopleRepository = get<IPersonRepository>(),
+         _carRepository = get<ICarRepository>(),
+         _navigationHandler = get<INavigationHandler>(),
+         _errorHandler = get<IErrorHandler>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
